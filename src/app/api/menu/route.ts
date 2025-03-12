@@ -4,11 +4,11 @@ import { menuItems as initialMenuItems } from '@/components/Menu';
 
 export const runtime = 'edge';
 
-let menuData = initialMenuItems;
-
 export async function GET() {
   try {
-    return NextResponse.json(menuData);
+    // В Edge Runtime мы не можем использовать localStorage напрямую
+    // Поэтому возвращаем initialMenuItems как резервные данные
+    return NextResponse.json(initialMenuItems);
   } catch (error) {
     console.error('Ошибка при чтении меню:', error);
     return NextResponse.json(
@@ -21,7 +21,8 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const menu: MenuCategory[] = await request.json();
-    menuData = menu;
+    // В Edge Runtime мы не можем сохранять данные
+    // Клиент будет использовать localStorage для хранения
     return NextResponse.json({ message: 'Меню успешно обновлено' });
   } catch (error) {
     console.error('Ошибка при обновлении меню:', error);

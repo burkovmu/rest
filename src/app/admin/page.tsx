@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { menuItems as initialMenuItems } from '@/components/Menu';
 import { Dialog } from '@headlessui/react';
-import { fetchMenu, updateMenu, uploadImage } from '@/utils/menuService';
+import { menuService } from '@/services/menuService';
 
 interface MenuItem {
   name: string;
@@ -53,24 +53,23 @@ export default function AdminPage() {
   useEffect(() => {
     const loadMenu = async () => {
       try {
-        const data = await fetchMenu();
-        if (Array.isArray(data)) {
-          setMenuItems(data);
-        }
+        const data = await menuService.loadMenu();
+        setMenuItems(data);
       } catch (error) {
         console.error('Ошибка при загрузке меню:', error);
-        // Используем локальные данные как резервные
-        setMenuItems(initialMenuItems);
       }
     };
 
     loadMenu();
   }, []);
 
+  // Сохраняем изменения в localStorage при каждом обновлении menuItems
   useEffect(() => {
     if (menuItems && menuItems.length > 0) {
       try {
-        localStorage.setItem('menuItems', JSON.stringify(menuItems));
+        menuService.saveMenu(menuItems).catch(error => {
+          console.error('Ошибка при синхронизации с сервером:', error);
+        });
       } catch (error) {
         console.error('Ошибка при сохранении меню:', error);
       }
@@ -79,9 +78,8 @@ export default function AdminPage() {
 
   const handleAddCategory = async () => {
     if (newCategory.trim()) {
-      const updatedMenu = [...menuItems, { category: newCategory, items: [] }];
       try {
-        await updateMenu(updatedMenu);
+        const updatedMenu = await menuService.addCategory(menuItems, newCategory);
         setMenuItems(updatedMenu);
         setNewCategory('');
       } catch (error) {
@@ -111,7 +109,7 @@ export default function AdminPage() {
 
     try {
       console.log('Загрузка изображения...', file.name);
-      const imageUrl = await uploadImage(file);
+      const imageUrl = await menuService.uploadImage(file);
       console.log('Изображение загружено');
       
       if (isEditing && editingItem) {
@@ -161,7 +159,7 @@ export default function AdminPage() {
 
     try {
       console.log('Обновление меню...');
-      const updatedMenu = menuItems.map(category => {
+      const newMenu = menuItems.map(category => {
         if (category.category === selectedCategory) {
           if (isSubcategory) {
             // Создаем новую подкатегорию
@@ -213,11 +211,11 @@ export default function AdminPage() {
       });
       
       console.log('Сохранение обновленного меню...');
-      await updateMenu(updatedMenu);
+      await menuService.saveMenu(newMenu);
       console.log('Меню успешно обновлено');
       
       // Сбрасываем форму
-      setMenuItems(updatedMenu);
+      setMenuItems(newMenu);
       setNewItem({
         name: '',
         price: '',
@@ -256,34 +254,17 @@ export default function AdminPage() {
   const handleUpdateItem = async () => {
     if (!editingItem) return;
 
-    const updatedMenu = menuItems.map(category => {
-      if (category.category === editingItem.categoryName) {
-        return {
-          ...category,
-          items: category.items.map(item => {
-            if (editingItem.subcategoryName) {
-              if (item.name === editingItem.subcategoryName) {
-                return {
-                  ...item,
-                  subcategory: (item.subcategory || []).map(subItem => 
-                    subItem.name === editingItem.item.name
-                      ? { ...newItem, price: newItem.price.replace(/₽/g, '').trim() + '₽' }
-                      : subItem
-                  )
-                };
-              }
-            } else if (item.name === editingItem.item.name) {
-              return { ...newItem, price: newItem.price.replace(/₽/g, '').trim() + '₽' };
-            }
-            return item;
-          })
-        };
-      }
-      return category;
-    });
-
     try {
-      await updateMenu(updatedMenu);
+      const updatedMenu = await menuService.updateItem(
+        menuItems,
+        editingItem.categoryName,
+        {
+          ...editingItem.item,
+          price: editingItem.item.price.replace(/₽/g, '').trim() + '₽'
+        },
+        editingItem.subcategoryName
+      );
+
       setMenuItems(updatedMenu);
       setEditingItem(null);
       setNewItem({
@@ -294,34 +275,20 @@ export default function AdminPage() {
         weight: '',
         nutrition: { calories: 0, protein: 0, fats: 0, carbs: 0 }
       });
+      
+      // Показываем уведомление об успешном обновлении
+      alert('Изменения успешно сохранены!');
     } catch (error) {
       console.error('Ошибка при обновлении блюда:', error);
+      alert('Произошла ошибка при обновлении блюда');
     }
   };
 
   const handleDeleteItem = async (categoryName: string, itemName: string, subcategoryName?: string) => {
     if (!confirm('Вы уверены, что хотите удалить это блюдо?')) return;
 
-    const updatedMenu = menuItems.map(category => {
-      if (category.category === categoryName) {
-        return {
-          ...category,
-          items: category.items.map(item => {
-            if (subcategoryName && item.name === subcategoryName) {
-              return {
-                ...item,
-                subcategory: (item.subcategory || []).filter(subItem => subItem.name !== itemName)
-              };
-            }
-            return item;
-          }).filter(item => item.name !== itemName || subcategoryName)
-        };
-      }
-      return category;
-    });
-
     try {
-      await updateMenu(updatedMenu);
+      const updatedMenu = await menuService.deleteItem(menuItems, categoryName, itemName, subcategoryName);
       setMenuItems(updatedMenu);
     } catch (error) {
       console.error('Ошибка при удалении блюда:', error);
@@ -329,9 +296,8 @@ export default function AdminPage() {
   };
 
   const handleDeleteCategory = async (categoryName: string) => {
-    const updatedMenu = menuItems.filter(category => category.category !== categoryName);
     try {
-      await updateMenu(updatedMenu);
+      const updatedMenu = await menuService.deleteCategory(menuItems, categoryName);
       setMenuItems(updatedMenu);
     } catch (error) {
       console.error('Ошибка при удалении категории:', error);
@@ -454,32 +420,45 @@ export default function AdminPage() {
               <input
                 type="text"
                 value={newItem.name}
-                onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-                placeholder={isSubcategory ? "Название подкатегории" : "Название блюда"}
+                onChange={(e) => setNewItem({
+                  ...newItem,
+                  name: e.target.value
+                })}
+                placeholder={editingItem?.item.subcategory ? "Название подкатегории" : "Название блюда"}
                 className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
               />
 
-              {!isSubcategory && (
+              <textarea
+                value={newItem.description}
+                onChange={(e) => setNewItem({
+                  ...newItem,
+                  description: e.target.value
+                })}
+                placeholder={editingItem?.item.subcategory ? "Описание подкатегории" : "Описание блюда"}
+                className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors min-h-[80px]"
+              />
+
+              {/* Показываем дополнительные поля только если это не подкатегория */}
+              {!editingItem?.item.subcategory && (
                 <>
                   <input
                     type="text"
                     value={newItem.price}
-                    onChange={(e) => setNewItem({ ...newItem, price: e.target.value })}
-                    placeholder="Цена (только число)"
+                    onChange={(e) => setNewItem({
+                      ...newItem,
+                      price: e.target.value
+                    })}
+                    placeholder="Цена"
                     className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
-                  />
-
-                  <textarea
-                    value={newItem.description}
-                    onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
-                    placeholder={isSubcategory ? "Описание подкатегории" : "Описание блюда"}
-                    className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors min-h-[80px]"
                   />
 
                   <input
                     type="text"
                     value={newItem.weight || ''}
-                    onChange={(e) => setNewItem({ ...newItem, weight: e.target.value })}
+                    onChange={(e) => setNewItem({
+                      ...newItem,
+                      weight: e.target.value
+                    })}
                     placeholder="Вес/объем (например: 250 г)"
                     className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
                   />
@@ -488,7 +467,7 @@ export default function AdminPage() {
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => handleImageChange(e, false)}
+                      onChange={(e) => handleImageChange(e, true)}
                       className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
                     />
                     {imagePreviewError && (

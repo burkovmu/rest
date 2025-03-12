@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { Dialog } from '@headlessui/react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { menuService } from '@/services/menuService';
 
 interface MenuItem {
   name: string;
@@ -35,35 +36,40 @@ export const menuItems: MenuCategory[] = [
         price: "2400₽",
         description: "3 шт.",
         image: "https://mt.delivery/img/img/Articles/17/1.jpg",
-        nutrition: { calories: 44, protein: 5, fats: 2, carbs: 3 }
+        nutrition: { calories: 44, protein: 5, fats: 2, carbs: 3 },
+        weight: "3 шт."
       },
       {
         name: "Устрицы «Рокфеллер»",
         price: "2900₽",
         description: "3 шт.",
         image: "https://i.pinimg.com/originals/75/90/25/7590253c091d56e85261949854ef3bc7.jpg",
-        nutrition: { calories: 120, protein: 8, fats: 8, carbs: 4 }
+        nutrition: { calories: 120, protein: 8, fats: 8, carbs: 4 },
+        weight: "3 шт."
       },
       {
         name: "Икра Щуки",
         price: "1500₽",
         description: "Свежая икра щуки с тостами",
         image: "https://sun9-15.userapi.com/impg/xLcYYZddUU_GJqqWhf6hrtx3lmCyhLjLILtTlQ/5bRYlYFZMcw.jpg?size=1039x960&quality=95&sign=ad8fb04f36c5351c4022e93b9c56d342&c_uniq_tag=mT_Ovd9chlpyKWG7TyKPrzOZ-ViBrgvqLKHjS2cUGf4&type=album",
-        nutrition: { calories: 230, protein: 25, fats: 15, carbs: 1 }
+        nutrition: { calories: 230, protein: 25, fats: 15, carbs: 1 },
+        weight: "50 г"
       },
       {
         name: "Икра Осётра",
         price: "9500₽",
         description: "Премиальная осетровая икра",
         image: "https://iy.kommersant.ru/Issues.photo/REGIONS/PITER_TEMA/2013/172M/KSP_009864_00423_2_t218.jpg",
-        nutrition: { calories: 264, protein: 26, fats: 18, carbs: 0 }
+        nutrition: { calories: 264, protein: 26, fats: 18, carbs: 0 },
+        weight: "50 г"
       },
       {
         name: "Икра Лосося",
         price: "1500₽",
         description: "Икра лосося с традиционными гарнирами",
         image: "https://frost-fish.ru/upload/medialibrary/5d0/5d044199890c2c1bc1660f5bc6771699.jpg",
-        nutrition: { calories: 250, protein: 24, fats: 16, carbs: 1 }
+        nutrition: { calories: 250, protein: 24, fats: 16, carbs: 1 },
+        weight: "50 г"
       }
     ]
   },
@@ -75,28 +81,32 @@ export const menuItems: MenuCategory[] = [
         price: "1600₽",
         description: "Говядина «Матрёшка», сливочный хрен, икра щуки",
         image: "https://avatars.mds.yandex.net/get-altay/2433982/2a00000174d8ece616c54d4dfe83e2666647/XXL",
-        nutrition: { calories: 320, protein: 28, fats: 22, carbs: 12 }
+        nutrition: { calories: 320, protein: 28, fats: 22, carbs: 12 },
+        weight: "180 г"
       },
       {
         name: "Сибирские грузди",
         price: "1200₽",
         description: "Сметана, лук",
         image: "https://irk.restcafe.ru/uploads/irk.restcafe.ru/photos/3046/menu/dish_36479.jpg",
-        nutrition: { calories: 180, protein: 4, fats: 15, carbs: 8 }
+        nutrition: { calories: 180, protein: 4, fats: 15, carbs: 8 },
+        weight: "150 г"
       },
       {
         name: "Сало Белорусское",
         price: "700₽",
         description: "Горчица, гренки",
         image: "https://sun9-74.userapi.com/impg/39Ugb8lXktMScJ9nQKXeg-LvGNkEaxXwx8S_iQ/6mgTKq52pdc.jpg?size=907x600&quality=96&sign=4de62cc5a39bc4396c649ac9fad14a38&c_uniq_tag=v0HwQ7wWG6HwaabWg_Yix0CuiYePuvG5kfe2B90Vr58&type=album",
-        nutrition: { calories: 450, protein: 12, fats: 42, carbs: 6 }
+        nutrition: { calories: 450, protein: 12, fats: 42, carbs: 6 },
+        weight: "120 г"
       },
       {
         name: "Закуска a la Russe",
         price: "1600₽",
         description: "Маринованные томаты, малосольные огурцы, шпроты, селёдка с подсолнечным маслом, вяленая оленина, сало",
         image: "https://avatars.mds.yandex.net/i?id=1ae9d08a4084abe3248b0f764fc2a071_l-8307637-images-thumbs&n=13",
-        nutrition: { calories: 480, protein: 25, fats: 38, carbs: 14 }
+        nutrition: { calories: 480, protein: 25, fats: 38, carbs: 14 },
+        weight: "350 г"
       }
     ]
   },
@@ -108,21 +118,24 @@ export const menuItems: MenuCategory[] = [
         price: "1600₽",
         description: "Трюфель, печёный виноград, розмарин, кленовый сироп",
         image: "https://images.unsplash.com/photo-1634487359989-3e90c9432133?auto=format&fit=crop&w=800&q=80",
-        nutrition: { calories: 420, protein: 18, fats: 35, carbs: 12 }
+        nutrition: { calories: 420, protein: 18, fats: 35, carbs: 12 },
+        weight: "220 г"
       },
       {
         name: "Обожжённый лосось «kiluvurst»",
         price: "2100₽",
         description: "Гриль-лук, ряженка, огурец, зелёное яблоко",
         image: "https://images.unsplash.com/photo-1485921325833-c519f76c4927?auto=format&fit=crop&w=800&q=80",
-        nutrition: { calories: 380, protein: 32, fats: 24, carbs: 8 }
+        nutrition: { calories: 380, protein: 32, fats: 24, carbs: 8 },
+        weight: "240 г"
       },
       {
         name: "Сугудай из муксуна",
         price: "1900₽",
         description: "Икра щуки, молодой картофель с укропом, настойка «Шмаковка»",
         image: "https://images.unsplash.com/photo-1553621042-f6e147245754?auto=format&fit=crop&w=800&q=80",
-        nutrition: { calories: 290, protein: 26, fats: 18, carbs: 10 }
+        nutrition: { calories: 290, protein: 26, fats: 18, carbs: 10 },
+        weight: "180 г"
       }
     ]
   },
@@ -134,21 +147,24 @@ export const menuItems: MenuCategory[] = [
         price: "990₽",
         description: "Гуакамоле, ассорти сезонных овощей, семечки, масло «TRAWA»",
         image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=800&q=80",
-        nutrition: { calories: 280, protein: 8, fats: 22, carbs: 16 }
+        nutrition: { calories: 280, protein: 8, fats: 22, carbs: 16 },
+        weight: "320 г"
       },
       {
         name: "Буррата с айвой и томатами",
         price: "1300₽",
         description: "Мизуна, малиновая эспума, трюфель, оливковое масло",
         image: "https://images.unsplash.com/photo-1576506295286-5cda18df43e7?auto=format&fit=crop&w=800&q=80",
-        nutrition: { calories: 350, protein: 14, fats: 28, carbs: 12 }
+        nutrition: { calories: 350, protein: 14, fats: 28, carbs: 12 },
+        weight: "280 г"
       },
       {
         name: "«Мимоза»",
         price: "1500₽",
         description: "Копчёный кижуч, осетровая икра",
         image: "https://sun9-76.userapi.com/impg/urlnG_KB8YXkf7vzp5cyHw2OxbSOFLi_FoTXgw/ePJSmPNy_4s.jpg?size=980x980&quality=95&sign=482cb164bd19c03b3ddee4e073bc0959&c_uniq_tag=c8X3tC9EkBr1zSpa04ZYWsyzLD8mXcEYt2edVzIwadU&type=album",
-        nutrition: { calories: 320, protein: 22, fats: 24, carbs: 8 }
+        nutrition: { calories: 320, protein: 22, fats: 24, carbs: 8 },
+        weight: "260 г"
       }
     ]
   },
@@ -160,21 +176,24 @@ export const menuItems: MenuCategory[] = [
         price: "1100₽",
         description: "Утка, вишня, сметана",
         image: "https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=800&q=80",
-        nutrition: { calories: 380, protein: 22, fats: 24, carbs: 28 }
+        nutrition: { calories: 380, protein: 22, fats: 24, carbs: 28 },
+        weight: "400 мл"
       },
       {
         name: "Томатный с рыбой и морепродуктами",
         price: "1650₽",
         description: "Бриошь, сливочный крем, икра",
         image: "https://images.unsplash.com/photo-1578020190125-f4f7c18bc9cb?auto=format&fit=crop&w=800&q=80",
-        nutrition: { calories: 320, protein: 24, fats: 18, carbs: 22 }
+        nutrition: { calories: 320, protein: 24, fats: 18, carbs: 22 },
+        weight: "380 мл"
       },
       {
         name: "Щи из кислой капусты",
         price: "1350₽",
         description: "Бычьи хвосты, белые грибы, брусника",
         image: "https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=800&q=80",
-        nutrition: { calories: 340, protein: 26, fats: 20, carbs: 18 }
+        nutrition: { calories: 340, protein: 26, fats: 20, carbs: 18 },
+        weight: "400 мл"
       }
     ]
   },
@@ -186,21 +205,24 @@ export const menuItems: MenuCategory[] = [
         price: "2100₽",
         description: "Крем из батата, соус умами, чипсы из водорослей",
         image: "https://i.pinimg.com/originals/42/4a/99/424a99f8abf2860e74fe0c9c1841d4a8.jpg",
-        nutrition: { calories: 340, protein: 28, fats: 18, carbs: 22 }
+        nutrition: { calories: 340, protein: 28, fats: 18, carbs: 22 },
+        weight: "180 г"
       },
       {
         name: "Краб",
         price: "2300₽",
         description: "Пикантные томаты, сабайон с шафраном",
         image: "https://images.unsplash.com/photo-1559742811-822873691df8?auto=format&fit=crop&w=800&q=80",
-        nutrition: { calories: 280, protein: 26, fats: 16, carbs: 12 }
+        nutrition: { calories: 280, protein: 26, fats: 16, carbs: 12 },
+        weight: "160 г"
       },
       {
         name: "Пельмени с грибами",
         price: "1750₽",
         description: "Сезонные грибы, трюфель, сливочный грибной соус",
         image: "https://eda.yandex/images/1368744/69710f0f57edc0c60c6f0763a5f88ba5-1100x825.jpg",
-        nutrition: { calories: 420, protein: 18, fats: 28, carbs: 36 }
+        nutrition: { calories: 420, protein: 18, fats: 28, carbs: 36 },
+        weight: "250 г"
       }
     ]
   },
@@ -212,21 +234,24 @@ export const menuItems: MenuCategory[] = [
         price: "2400₽",
         description: "Перлотто с молодой свёклой, соус с мидиями",
         image: "https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=800&q=80",
-        nutrition: { calories: 460, protein: 38, fats: 28, carbs: 22 }
+        nutrition: { calories: 460, protein: 38, fats: 28, carbs: 22 },
+        weight: "320 г"
       },
       {
         name: "Сибас",
         price: "1950₽",
         description: "Филе на пару, зелёный горошек, лайм, огурцы, соус с лимонником",
         image: "https://images.unsplash.com/photo-1535399831218-d5bd36d1a6b3?auto=format&fit=crop&w=800&q=80",
-        nutrition: { calories: 380, protein: 42, fats: 18, carbs: 12 }
+        nutrition: { calories: 380, protein: 42, fats: 18, carbs: 12 },
+        weight: "300 г"
       },
       {
         name: "Котлета из щуки и судака",
         price: "1900₽",
         description: "Цветок цукини, брокколи, желток конфи, соус с икрой",
         image: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&w=800&q=80",
-        nutrition: { calories: 420, protein: 38, fats: 24, carbs: 16 }
+        nutrition: { calories: 420, protein: 38, fats: 24, carbs: 16 },
+        weight: "280 г"
       }
     ]
   },
@@ -238,21 +263,24 @@ export const menuItems: MenuCategory[] = [
         price: "650₽",
         description: "Классический медовый торт с кремом",
         image: "https://images.unsplash.com/photo-1587314168485-3236d6710814?auto=format&fit=crop&w=800&q=80",
-        nutrition: { calories: 380, protein: 6, fats: 18, carbs: 48 }
+        nutrition: { calories: 380, protein: 6, fats: 18, carbs: 48 },
+        weight: "150 г"
       },
       {
         name: "Наполеон",
         price: "650₽",
         description: "Традиционный слоёный торт с заварным кремом",
         image: "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=800&q=80",
-        nutrition: { calories: 420, protein: 8, fats: 22, carbs: 52 }
+        nutrition: { calories: 420, protein: 8, fats: 22, carbs: 52 },
+        weight: "180 г"
       },
       {
         name: "Птичье молоко",
         price: "650₽",
         description: "Нежное суфле в шоколадной глазури",
         image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80",
-        nutrition: { calories: 350, protein: 5, fats: 16, carbs: 46 }
+        nutrition: { calories: 350, protein: 5, fats: 16, carbs: 46 },
+        weight: "130 г"
       }
     ]
   },
@@ -264,7 +292,8 @@ export const menuItems: MenuCategory[] = [
         price: "590₽",
         description: "Те Гуань Инь – один из самых популярных сортов китайского улуна. Он произрастает в уезде Аньси провинции Фуцзянь и имеет общий цветочно-луговой профиль.",
         image: "https://www.chaochay.ru/image/catalog/articles/10.04.2021/3.jpg",
-        nutrition: { calories: 0, protein: 0, fats: 0, carbs: 0 }
+        nutrition: { calories: 0, protein: 0, fats: 0, carbs: 0 },
+        weight: "500 мл"
       }
     ]
   },
@@ -413,34 +442,30 @@ const staggerContainer = {
 
 export default function Menu() {
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
-  const [items, setItems] = useState<MenuCategory[]>(menuItems);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [currentMenu, setCurrentMenu] = useState<MenuCategory[]>(menuItems);
+  const [selectedCategory, setSelectedCategory] = useState(0);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const fetchMenuData = async () => {
+    const loadMenu = async () => {
       try {
-        const response = await fetch('/api/menu');
-        if (response.ok) {
-          const data = await response.json();
-          setItems(data);
-          setSelectedCategory(data[0].category);
-        } else {
-          console.error('Ошибка при загрузке меню с сервера');
-          setItems(menuItems);
-          setSelectedCategory(menuItems[0].category);
+        setIsLoading(true);
+        // Проверяем, что мы на клиенте
+        if (typeof window !== 'undefined') {
+          const loadedMenu = await menuService.loadMenu();
+          if (loadedMenu && loadedMenu.length > 0) {
+            setCurrentMenu(loadedMenu);
+          }
         }
       } catch (error) {
         console.error('Ошибка при загрузке меню:', error);
-        setItems(menuItems);
-        setSelectedCategory(menuItems[0].category);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchMenuData();
+    loadMenu();
   }, []);
 
   useEffect(() => {
@@ -468,7 +493,7 @@ export default function Menu() {
     }
   };
 
-  const currentCategory = items.find(category => category.category === selectedCategory) || items[0];
+  const currentCategory = currentMenu[selectedCategory] || currentMenu[0];
   let currentItems = currentCategory.items;
   
   if (selectedSubcategory) {
@@ -530,11 +555,11 @@ export default function Menu() {
 
       <div className="relative z-10 w-full max-w-7xl px-4 md:px-8 space-y-12">
         <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-          {items.map((category, index) => (
+          {currentMenu.map((category, index) => (
             <motion.button
               key={index}
               onClick={() => {
-                setSelectedCategory(category.category);
+                setSelectedCategory(index);
                 setSelectedSubcategory("");
               }}
               initial={{ opacity: 0, y: 20 }}
@@ -543,7 +568,7 @@ export default function Menu() {
               className={`group relative w-full`}
             >
               <div className={`absolute inset-0 rounded-xl transition-all duration-300 ${
-                selectedCategory === category.category
+                selectedCategory === index
                   ? 'opacity-100 shadow-[0_0_25px_rgba(230,185,128,0.15)]'
                   : 'opacity-0 group-hover:opacity-100'
               }`}>
@@ -552,21 +577,21 @@ export default function Menu() {
               </div>
 
               <div className={`relative h-[4rem] flex items-center justify-center p-3 rounded-xl backdrop-blur-sm transition-all duration-300 ${
-                selectedCategory === category.category
+                selectedCategory === index
                   ? 'bg-gradient-to-br from-[#E6B980] to-[#D4A56A] border-none shadow-[0_0_15px_rgba(230,185,128,0.2)]'
                   : 'bg-black/30 border border-white/5 group-hover:border-[#E6B980]/20 group-hover:bg-black/40'
               }`}>
                 <div className={`transition-all duration-300 text-center ${
-                  selectedCategory === category.category
+                  selectedCategory === index
                     ? 'scale-105'
                     : 'group-hover:scale-105'
                 }`}>
                   <span className={`block text-[11px] md:text-xs font-light tracking-[0.15em] ${
-                    selectedCategory === category.category
+                    selectedCategory === index
                       ? 'text-black'
                       : 'text-white/80 group-hover:text-[#E6B980]'
                   }`}>
-                    {category.category}
+                    {currentMenu[index].category}
                   </span>
                 </div>
               </div>
@@ -582,7 +607,7 @@ export default function Menu() {
               onClick={() => setSelectedSubcategory("")}
               className="relative group overflow-hidden px-6 py-3 border border-[#333] rounded-full uppercase text-sm tracking-widest text-gray-500 transition-all hover:border-[#E6B980]/40 hover:text-[#E6B980]/40 flex items-center justify-center bg-black/20"
             >
-              <span className="relative">← Назад к {selectedCategory}</span>
+              <span className="relative">← Назад к {currentMenu[selectedCategory].category}</span>
             </motion.button>
 
             <motion.div
@@ -642,7 +667,9 @@ export default function Menu() {
                         <div className="pt-2">
                           <div className="flex justify-between items-center">
                             <p className="text-[#E6B980] font-medium text-lg md:text-xl tracking-wide">{item.price}</p>
-                            <span className="text-xs text-gray-500 font-light">50 мл</span>
+                            {item.weight && (
+                              <span className="text-xs text-gray-500 font-light">{item.weight}</span>
+                            )}
                           </div>
                         </div>
                       )}
@@ -711,7 +738,7 @@ export default function Menu() {
                         </Dialog.Title>
                         {!selectedItem.subcategory && (
                           <span className="text-white/60 text-xs ml-4 bg-white/5 px-3 py-1 rounded-full whitespace-nowrap">
-                            {selectedItem.weight || '50 мл'}
+                            {selectedItem.weight || (currentCategory.category === "Крепкий алкоголь" ? '50 мл' : '')}
                           </span>
                         )}
                       </div>
