@@ -1,11 +1,5 @@
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
-import crypto from 'crypto';
 
-const uploadsDir = path.join(process.cwd(), 'public/uploads');
-
-// Новый способ конфигурации для route handlers
 export const runtime = 'edge';
 
 export async function POST(request: Request) {
@@ -20,21 +14,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // Создаем директорию для загрузок, если она не существует
-    await fs.mkdir(uploadsDir, { recursive: true });
+    // Конвертируем файл в base64
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const base64 = buffer.toString('base64');
+    const mimeType = file.type;
+    const dataUrl = `data:${mimeType};base64,${base64}`;
 
-    // Генерируем уникальное имя файла
-    const fileExtension = path.extname(file.name);
-    const fileName = crypto.randomBytes(16).toString('hex') + fileExtension;
-    const filePath = path.join(uploadsDir, fileName);
-
-    // Читаем и сохраняем файл
-    const buffer = Buffer.from(await file.arrayBuffer());
-    await fs.writeFile(filePath, buffer);
-
-    // Возвращаем URL файла
-    const fileUrl = `/uploads/${fileName}`;
-    return NextResponse.json({ url: fileUrl });
+    return NextResponse.json({ url: dataUrl });
   } catch (error) {
     console.error('Ошибка при загрузке файла:', error);
     return NextResponse.json(

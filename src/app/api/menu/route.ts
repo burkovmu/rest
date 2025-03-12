@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
 import { MenuCategory } from '@/types/menu';
+import { menuItems as initialMenuItems } from '@/components/Menu';
 
-const menuPath = path.join(process.cwd(), 'public/menu-data.json');
+export const runtime = 'edge';
+
+let menuData = initialMenuItems;
 
 export async function GET() {
   try {
-    const menuData = await fs.readFile(menuPath, 'utf-8');
-    return NextResponse.json(JSON.parse(menuData));
+    return NextResponse.json(menuData);
   } catch (error) {
     console.error('Ошибка при чтении меню:', error);
     return NextResponse.json(
@@ -21,7 +21,7 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const menu: MenuCategory[] = await request.json();
-    await fs.writeFile(menuPath, JSON.stringify(menu, null, 2));
+    menuData = menu;
     return NextResponse.json({ message: 'Меню успешно обновлено' });
   } catch (error) {
     console.error('Ошибка при обновлении меню:', error);

@@ -91,6 +91,9 @@ export default function AdminPage() {
   };
 
   const validateImageUrl = (url: string) => {
+    if (url.startsWith('data:image/')) {
+      return '';
+    }
     try {
       const urlObj = new URL(url);
       if (!urlObj.protocol.startsWith('http')) {
@@ -109,7 +112,7 @@ export default function AdminPage() {
     try {
       console.log('Загрузка изображения...', file.name);
       const imageUrl = await uploadImage(file);
-      console.log('Изображение загружено:', imageUrl);
+      console.log('Изображение загружено');
       
       if (isEditing && editingItem) {
         setEditingItem({
