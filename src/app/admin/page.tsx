@@ -37,6 +37,8 @@ export default function AdminPage() {
   const [newCategory, setNewCategory] = useState('');
   const [isSubcategory, setIsSubcategory] = useState(false);
   const [isAddingSubcategory, setIsAddingSubcategory] = useState(false);
+  const [isAddingItem, setIsAddingItem] = useState(false);
+  const [isEditingItem, setIsEditingItem] = useState(false);
   const [editingItem, setEditingItem] = useState<{
     item: MenuItem;
     categoryName: string;
@@ -164,6 +166,7 @@ export default function AdminPage() {
       level: item.level,
       items: item.items
     });
+    setIsEditingItem(true);
   };
 
   const handleUpdateItem = async () => {
@@ -188,6 +191,7 @@ export default function AdminPage() {
 
       setMenuItems(updatedMenu);
       resetForm();
+      setIsEditingItem(false);
       alert('Изменения успешно сохранены!');
     } catch (error) {
       console.error('Ошибка при обновлении элемента:', error);
@@ -590,201 +594,18 @@ export default function AdminPage() {
 
           <div className="md:col-span-8 space-y-8">
             {selectedCategory && (
-              <>
-                <div className="bg-black/30 p-6 rounded-lg border border-white/10">
-                  <h2 className="text-xl font-light mb-4 text-[#E6B980]">
-                    {editingItem ? 'Редактирование элемента' : 'Добавление элемента'}
+              <div className="bg-black/30 p-6 rounded-lg border border-white/10">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-light text-[#E6B980]">
+                    Содержимое категории "{selectedCategory}"
                   </h2>
-                  
-                  <div className="space-y-4">
-                    {editingItem ? (
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-[10px] md:text-xs text-[#E6B980] tracking-[0.15em] uppercase mb-2">
-                            Категория
-                          </label>
-                          <select
-                            value={selectedCategory}
-                            disabled
-                            className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
-                          >
-                            <option value={selectedCategory} className="bg-[#0A0A0A]">
-                              {selectedCategory}
-                            </option>
-                          </select>
-                        </div>
-
-                        {renderSubcategorySelect()}
-
-                        <div className="bg-white/[0.02] p-3 rounded-lg">
-                          <p className="text-sm text-[#E6B980]">
-                            Текущее расположение:
-                            <span className="text-white/60 ml-2">
-                              {editingItem.categoryName}
-                              {editingItem.path.length > 0 && (
-                                <span className="text-[#E6B980]">
-                                  {' → '}
-                                  {editingItem.path.join(' → ')}
-                                </span>
-                              )}
-                            </span>
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      renderSubcategorySelect()
-                    )}
-
-                    <input
-                      type="text"
-                      value={newItem.name}
-                      onChange={(e) => setNewItem({
-                        ...newItem,
-                        name: e.target.value
-                      })}
-                      placeholder="Название"
-                      className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
-                    />
-
-                    <textarea
-                      value={newItem.description}
-                      onChange={(e) => setNewItem({
-                        ...newItem,
-                        description: e.target.value
-                      })}
-                      placeholder="Описание"
-                      className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors min-h-[80px]"
-                    />
-
-                    {!isSubcategory && (
-                      <>
-                        <input
-                          type="text"
-                          value={newItem.price}
-                          onChange={(e) => setNewItem({
-                            ...newItem,
-                            price: e.target.value
-                          })}
-                          placeholder="Цена"
-                          className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
-                        />
-
-                        <input
-                          type="text"
-                          value={newItem.weight || ''}
-                          onChange={(e) => setNewItem({
-                            ...newItem,
-                            weight: e.target.value
-                          })}
-                          placeholder="Вес/объем (например: 250 г)"
-                          className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
-                        />
-
-                        <div className="space-y-2">
-                          <label className="block text-sm font-medium mb-2">Изображение</label>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                const reader = new FileReader();
-                                reader.onloadend = () => {
-                                  setNewItem({ ...newItem, image: reader.result as string });
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                            }}
-                            className="w-full p-2 border rounded"
-                          />
-                          {newItem.image && (
-                            <div className="mt-2">
-                              <img 
-                                src={newItem.image} 
-                                alt="Предпросмотр" 
-                                className="w-24 h-24 object-cover rounded"
-                              />
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm text-[#E6B980]/70 mb-1">Калории (ккал)</label>
-                            <input
-                              type="number"
-                              value={newItem.nutrition.calories}
-                              onChange={(e) => setNewItem({
-                                ...newItem,
-                                nutrition: { ...newItem.nutrition, calories: parseInt(e.target.value) }
-                              })}
-                              className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm text-[#E6B980]/70 mb-1">Белки (г)</label>
-                            <input
-                              type="number"
-                              value={newItem.nutrition.protein}
-                              onChange={(e) => setNewItem({
-                                ...newItem,
-                                nutrition: { ...newItem.nutrition, protein: parseInt(e.target.value) }
-                              })}
-                              className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm text-[#E6B980]/70 mb-1">Жиры (г)</label>
-                            <input
-                              type="number"
-                              value={newItem.nutrition.fats}
-                              onChange={(e) => setNewItem({
-                                ...newItem,
-                                nutrition: { ...newItem.nutrition, fats: parseInt(e.target.value) }
-                              })}
-                              className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm text-[#E6B980]/70 mb-1">Углеводы (г)</label>
-                            <input
-                              type="number"
-                              value={newItem.nutrition.carbs}
-                              onChange={(e) => setNewItem({
-                                ...newItem,
-                                nutrition: { ...newItem.nutrition, carbs: parseInt(e.target.value) }
-                              })}
-                              className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
-                            />
-                          </div>
-                        </div>
-                      </>
-                    )}
-
-                    <div className="flex space-x-4 pt-4">
-                      <button
-                        onClick={editingItem ? handleUpdateItem : handleAddItem}
-                        className="flex-1 bg-gradient-to-r from-[#E6B980] to-[#D4A56A] text-black py-2 px-4 rounded-lg font-medium tracking-wide hover:opacity-90 transition-opacity"
-                      >
-                        {editingItem ? 'Сохранить изменения' : 'Добавить блюдо'}
-                      </button>
-                      {editingItem && (
-                        <button
-                          onClick={resetForm}
-                          className="flex-1 border border-[#E6B980]/30 text-[#E6B980] py-2 px-4 rounded-lg font-medium tracking-wide hover:bg-[#E6B980]/10 transition-all"
-                        >
-                          Отмена
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-black/30 p-6 rounded-lg border border-white/10">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-light text-[#E6B980]">
-                      Содержимое категории "{selectedCategory}"
-                    </h2>
+                  <div className="flex items-center space-x-4">
+                    <button
+                      onClick={() => setIsAddingItem(true)}
+                      className="bg-gradient-to-r from-[#E6B980] to-[#D4A56A] text-black px-4 py-2 rounded-lg text-sm transition-opacity hover:opacity-90"
+                    >
+                      + Добавить блюдо
+                    </button>
                     {selectedCategory && (
                       <button
                         onClick={() => handleDeleteCategory(selectedCategory)}
@@ -794,17 +615,351 @@ export default function AdminPage() {
                       </button>
                     )}
                   </div>
-                  <div className="space-y-2">
-                    {menuItems
-                      .find(cat => cat.category === selectedCategory)
-                      ?.items?.map((item) => renderMenuItem(item, [item.name])) || []}
-                  </div>
                 </div>
-              </>
+                <div className="space-y-2">
+                  {menuItems
+                    .find(cat => cat.category === selectedCategory)
+                    ?.items?.map((item) => renderMenuItem(item, [item.name])) || []}
+                </div>
+              </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Модальное окно редактирования элемента */}
+      {isEditingItem && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#0A0A0A] p-6 rounded-lg border border-white/10 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-light text-[#E6B980]">
+                Редактирование элемента
+              </h2>
+              <button
+                onClick={() => {
+                  setIsEditingItem(false);
+                  resetForm();
+                }}
+                className="text-white/60 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {renderSubcategorySelect()}
+
+              <input
+                type="text"
+                value={newItem.name}
+                onChange={(e) => setNewItem({
+                  ...newItem,
+                  name: e.target.value
+                })}
+                placeholder="Название"
+                className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
+              />
+
+              <textarea
+                value={newItem.description}
+                onChange={(e) => setNewItem({
+                  ...newItem,
+                  description: e.target.value
+                })}
+                placeholder="Описание"
+                className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors min-h-[80px]"
+              />
+
+              {!editingItem?.item.isSubcategory && (
+                <>
+                  <input
+                    type="text"
+                    value={newItem.price}
+                    onChange={(e) => setNewItem({
+                      ...newItem,
+                      price: e.target.value
+                    })}
+                    placeholder="Цена"
+                    className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
+                  />
+
+                  <input
+                    type="text"
+                    value={newItem.weight || ''}
+                    onChange={(e) => setNewItem({
+                      ...newItem,
+                      weight: e.target.value
+                    })}
+                    placeholder="Вес/объем (например: 250 г)"
+                    className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
+                  />
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium mb-2">Изображение</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageChange(e, true)}
+                      className="w-full p-2 border rounded"
+                    />
+                    {newItem.image && (
+                      <div className="mt-2">
+                        <img 
+                          src={newItem.image} 
+                          alt="Предпросмотр" 
+                          className="w-24 h-24 object-cover rounded"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm text-[#E6B980]/70 mb-1">Калории (ккал)</label>
+                      <input
+                        type="number"
+                        value={newItem.nutrition.calories}
+                        onChange={(e) => setNewItem({
+                          ...newItem,
+                          nutrition: { ...newItem.nutrition, calories: parseInt(e.target.value) }
+                        })}
+                        className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-[#E6B980]/70 mb-1">Белки (г)</label>
+                      <input
+                        type="number"
+                        value={newItem.nutrition.protein}
+                        onChange={(e) => setNewItem({
+                          ...newItem,
+                          nutrition: { ...newItem.nutrition, protein: parseInt(e.target.value) }
+                        })}
+                        className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-[#E6B980]/70 mb-1">Жиры (г)</label>
+                      <input
+                        type="number"
+                        value={newItem.nutrition.fats}
+                        onChange={(e) => setNewItem({
+                          ...newItem,
+                          nutrition: { ...newItem.nutrition, fats: parseInt(e.target.value) }
+                        })}
+                        className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-[#E6B980]/70 mb-1">Углеводы (г)</label>
+                      <input
+                        type="number"
+                        value={newItem.nutrition.carbs}
+                        onChange={(e) => setNewItem({
+                          ...newItem,
+                          nutrition: { ...newItem.nutrition, carbs: parseInt(e.target.value) }
+                        })}
+                        className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div className="flex space-x-4 pt-4">
+                <button
+                  onClick={handleUpdateItem}
+                  className="flex-1 bg-gradient-to-r from-[#E6B980] to-[#D4A56A] text-black py-2 px-4 rounded-lg font-medium tracking-wide hover:opacity-90 transition-opacity"
+                >
+                  Сохранить изменения
+                </button>
+                <button
+                  onClick={() => {
+                    setIsEditingItem(false);
+                    resetForm();
+                  }}
+                  className="flex-1 border border-[#E6B980]/30 text-[#E6B980] py-2 px-4 rounded-lg font-medium tracking-wide hover:bg-[#E6B980]/10 transition-all"
+                >
+                  Отмена
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно добавления элемента */}
+      {isAddingItem && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#0A0A0A] p-6 rounded-lg border border-white/10 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-light text-[#E6B980]">
+                Добавление элемента
+              </h2>
+              <button
+                onClick={() => {
+                  setIsAddingItem(false);
+                  resetForm();
+                }}
+                className="text-white/60 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {renderSubcategorySelect()}
+
+              <input
+                type="text"
+                value={newItem.name}
+                onChange={(e) => setNewItem({
+                  ...newItem,
+                  name: e.target.value
+                })}
+                placeholder="Название"
+                className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
+              />
+
+              <textarea
+                value={newItem.description}
+                onChange={(e) => setNewItem({
+                  ...newItem,
+                  description: e.target.value
+                })}
+                placeholder="Описание"
+                className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors min-h-[80px]"
+              />
+
+              {!isSubcategory && (
+                <>
+                  <input
+                    type="text"
+                    value={newItem.price}
+                    onChange={(e) => setNewItem({
+                      ...newItem,
+                      price: e.target.value
+                    })}
+                    placeholder="Цена"
+                    className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
+                  />
+
+                  <input
+                    type="text"
+                    value={newItem.weight || ''}
+                    onChange={(e) => setNewItem({
+                      ...newItem,
+                      weight: e.target.value
+                    })}
+                    placeholder="Вес/объем (например: 250 г)"
+                    className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
+                  />
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium mb-2">Изображение</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setNewItem({ ...newItem, image: reader.result as string });
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="w-full p-2 border rounded"
+                    />
+                    {newItem.image && (
+                      <div className="mt-2">
+                        <img 
+                          src={newItem.image} 
+                          alt="Предпросмотр" 
+                          className="w-24 h-24 object-cover rounded"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm text-[#E6B980]/70 mb-1">Калории (ккал)</label>
+                      <input
+                        type="number"
+                        value={newItem.nutrition.calories}
+                        onChange={(e) => setNewItem({
+                          ...newItem,
+                          nutrition: { ...newItem.nutrition, calories: parseInt(e.target.value) }
+                        })}
+                        className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-[#E6B980]/70 mb-1">Белки (г)</label>
+                      <input
+                        type="number"
+                        value={newItem.nutrition.protein}
+                        onChange={(e) => setNewItem({
+                          ...newItem,
+                          nutrition: { ...newItem.nutrition, protein: parseInt(e.target.value) }
+                        })}
+                        className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-[#E6B980]/70 mb-1">Жиры (г)</label>
+                      <input
+                        type="number"
+                        value={newItem.nutrition.fats}
+                        onChange={(e) => setNewItem({
+                          ...newItem,
+                          nutrition: { ...newItem.nutrition, fats: parseInt(e.target.value) }
+                        })}
+                        className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-[#E6B980]/70 mb-1">Углеводы (г)</label>
+                      <input
+                        type="number"
+                        value={newItem.nutrition.carbs}
+                        onChange={(e) => setNewItem({
+                          ...newItem,
+                          nutrition: { ...newItem.nutrition, carbs: parseInt(e.target.value) }
+                        })}
+                        className="w-full bg-white/[0.02] border-0 border-b border-white/10 px-4 py-2 text-white/90 text-sm font-light focus:outline-none focus:border-[#E6B980]/30 transition-colors"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div className="flex space-x-4 pt-4">
+                <button
+                  onClick={async () => {
+                    await handleAddItem();
+                    setIsAddingItem(false);
+                  }}
+                  className="flex-1 bg-gradient-to-r from-[#E6B980] to-[#D4A56A] text-black py-2 px-4 rounded-lg font-medium tracking-wide hover:opacity-90 transition-opacity"
+                >
+                  Добавить блюдо
+                </button>
+                <button
+                  onClick={() => {
+                    setIsAddingItem(false);
+                    resetForm();
+                  }}
+                  className="flex-1 border border-[#E6B980]/30 text-[#E6B980] py-2 px-4 rounded-lg font-medium tracking-wide hover:bg-[#E6B980]/10 transition-all"
+                >
+                  Отмена
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
