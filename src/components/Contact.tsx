@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 interface ContactProps {
   onClose?: () => void;
@@ -44,7 +45,21 @@ export default function Contact({ onClose }: ContactProps) {
 
   return (
     <div className="fixed inset-0 bg-[#0A0A0A] overflow-y-auto">
-      <div className="min-h-screen flex items-center justify-center py-12 px-4">
+      {/* Кнопка "Назад" */}
+      {onClose && (
+        <motion.button
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+          onClick={onClose}
+          className="absolute top-4 left-4 z-50 group overflow-hidden md:px-6 md:py-3 px-0 w-10 h-10 md:w-auto md:h-auto border border-[#333] rounded-full uppercase text-sm tracking-widest text-gray-500 transition-all hover:border-[#E6B980]/40 hover:text-[#E6B980]/40 flex items-center justify-center bg-black/20 backdrop-blur-sm"
+        >
+          <span className="md:hidden inline-flex items-center justify-center relative">←</span>
+          <span className="hidden md:inline relative">← Назад</span>
+        </motion.button>
+      )}
+
+      <div className="min-h-screen flex items-center justify-center py-20 px-4">
         {/* Фоновые эффекты */}
         <div className="fixed inset-0">
           <div className="absolute inset-0 bg-[#0A0A0A]" />
@@ -52,20 +67,6 @@ export default function Contact({ onClose }: ContactProps) {
           <div className="absolute inset-0 bg-gradient-to-br from-[#E6B980]/5 via-transparent to-[#D4A56A]/5" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(230,185,128,0.1),transparent_70%)]" />
         </div>
-
-        {/* Кнопка "Назад" */}
-        {onClose && (
-          <motion.button
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            onClick={onClose}
-            className="fixed top-8 left-8 px-6 py-3 border border-[#333] rounded-full uppercase text-sm tracking-widest text-gray-500 transition-all hover:border-[#E6B980]/40 hover:text-[#E6B980]/40 flex items-center gap-2"
-          >
-            <span>←</span>
-            <span>На главную</span>
-          </motion.button>
-        )}
 
         {/* Основной контент */}
         <motion.div 
@@ -182,15 +183,14 @@ export default function Contact({ onClose }: ContactProps) {
                     <button
                       type="button"
                       onClick={onClose}
-                      className="relative group overflow-hidden rounded-lg h-10 flex-1 md:w-32"
+                      className="relative group overflow-hidden rounded-lg h-10 flex-1 md:w-32 border border-white/10"
                     >
                       <div className="absolute inset-0 bg-white/5 group-hover:bg-white/10 transition-colors" />
                       <div className="relative flex items-center justify-center">
-                        <span className="text-[10px] md:text-xs uppercase tracking-[0.15em] text-white/60 group-hover:text-white/80 transition-colors">
+                        <span className="text-[10px] md:text-xs uppercase tracking-[0.15em] text-white/60 group-hover:text-[#E6B980] transition-colors">
                           Закрыть
                         </span>
                       </div>
-                      <div className="absolute inset-0 border border-white/10" />
                     </button>
                     <button
                       type="submit"
