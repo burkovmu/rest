@@ -231,5 +231,25 @@ export const menuService = {
 
     await this.saveMenu(updatedMenu);
     return updatedMenu;
+  },
+
+  async moveCategoryUp(menu: MenuCategory[], categoryName: string): Promise<MenuCategory[]> {
+    const index = menu.findIndex(cat => cat.category === categoryName);
+    if (index <= 0) return menu;
+
+    const updatedMenu = [...menu];
+    [updatedMenu[index - 1], updatedMenu[index]] = [updatedMenu[index], updatedMenu[index - 1]];
+    await this.saveMenu(updatedMenu);
+    return updatedMenu;
+  },
+
+  async moveCategoryDown(menu: MenuCategory[], categoryName: string): Promise<MenuCategory[]> {
+    const index = menu.findIndex(cat => cat.category === categoryName);
+    if (index === -1 || index >= menu.length - 1) return menu;
+
+    const updatedMenu = [...menu];
+    [updatedMenu[index], updatedMenu[index + 1]] = [updatedMenu[index + 1], updatedMenu[index]];
+    await this.saveMenu(updatedMenu);
+    return updatedMenu;
   }
 }; 

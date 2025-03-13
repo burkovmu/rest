@@ -3,19 +3,6 @@
     "category": "Устрицы и Икра",
     "items": [
       {
-        "name": "Устрицы",
-        "price": "2400₽",
-        "description": "Наслаждайтесь изысканным вкусом свежайших устриц, поданных в классическом стиле. Каждая устрица — это настоящий шедевр природы, выращенный в чистых водах Атлантики или Средиземноморья. Подаются охлажденными на льду с традиционными аккомпанементами: лимоном, соусом из красного винного уксуса и табаско. Идеальный выбор для ценителей утонченных морских деликатесов.\n\nПодача: 6 или 12 штук.\nРекомендуем дополнить бокалом охлажденного шампанского или белого вина.",
-        "image": "https://mt.delivery/img/img/Articles/17/1.jpg",
-        "nutrition": {
-          "calories": 44,
-          "protein": 5,
-          "fats": 2,
-          "carbs": 3
-        },
-        "weight": "3 шт."
-      },
-      {
         "name": "Устрицы «Рокфеллер»",
         "price": "2900₽",
         "description": "3 шт.",
@@ -25,6 +12,19 @@
           "protein": 8,
           "fats": 8,
           "carbs": 4
+        },
+        "weight": "3 шт."
+      },
+      {
+        "name": "Устрицы",
+        "price": "2400₽",
+        "description": "Наслаждайтесь изысканным вкусом свежайших устриц, поданных в классическом стиле. Каждая устрица — это настоящий шедевр природы, выращенный в чистых водах Атлантики или Средиземноморья. Подаются охлажденными на льду с традиционными аккомпанементами: лимоном, соусом из красного винного уксуса и табаско. Идеальный выбор для ценителей утонченных морских деликатесов.\n\nПодача: 6 или 12 штук.\nРекомендуем дополнить бокалом охлажденного шампанского или белого вина.",
+        "image": "https://mt.delivery/img/img/Articles/17/1.jpg",
+        "nutrition": {
+          "calories": 44,
+          "protein": 5,
+          "fats": 2,
+          "carbs": 3
         },
         "weight": "3 шт."
       },
@@ -142,6 +142,50 @@
     ]
   },
   {
+    "category": "Супы",
+    "items": [
+      {
+        "name": "Борщ",
+        "price": "1100₽",
+        "description": "Утка, вишня, сметана",
+        "image": "https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=800&q=80",
+        "nutrition": {
+          "calories": 380,
+          "protein": 22,
+          "fats": 24,
+          "carbs": 28
+        },
+        "weight": "400 мл"
+      },
+      {
+        "name": "Томатный с рыбой и морепродуктами",
+        "price": "1650₽",
+        "description": "Бриошь, сливочный крем, икра",
+        "image": "https://images.unsplash.com/photo-1578020190125-f4f7c18bc9cb?auto=format&fit=crop&w=800&q=80",
+        "nutrition": {
+          "calories": 320,
+          "protein": 24,
+          "fats": 18,
+          "carbs": 22
+        },
+        "weight": "380 мл"
+      },
+      {
+        "name": "Щи из кислой капусты",
+        "price": "1350₽",
+        "description": "Бычьи хвосты, белые грибы, брусника",
+        "image": "https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=800&q=80",
+        "nutrition": {
+          "calories": 340,
+          "protein": 26,
+          "fats": 20,
+          "carbs": 18
+        },
+        "weight": "400 мл"
+      }
+    ]
+  },
+  {
     "category": "Закуски",
     "items": [
       {
@@ -226,50 +270,6 @@
           "carbs": 8
         },
         "weight": "260 г"
-      }
-    ]
-  },
-  {
-    "category": "Супы",
-    "items": [
-      {
-        "name": "Борщ",
-        "price": "1100₽",
-        "description": "Утка, вишня, сметана",
-        "image": "https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=800&q=80",
-        "nutrition": {
-          "calories": 380,
-          "protein": 22,
-          "fats": 24,
-          "carbs": 28
-        },
-        "weight": "400 мл"
-      },
-      {
-        "name": "Томатный с рыбой и морепродуктами",
-        "price": "1650₽",
-        "description": "Бриошь, сливочный крем, икра",
-        "image": "https://images.unsplash.com/photo-1578020190125-f4f7c18bc9cb?auto=format&fit=crop&w=800&q=80",
-        "nutrition": {
-          "calories": 320,
-          "protein": 24,
-          "fats": 18,
-          "carbs": 22
-        },
-        "weight": "380 мл"
-      },
-      {
-        "name": "Щи из кислой капусты",
-        "price": "1350₽",
-        "description": "Бычьи хвосты, белые грибы, брусника",
-        "image": "https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=800&q=80",
-        "nutrition": {
-          "calories": 340,
-          "protein": 26,
-          "fats": 20,
-          "carbs": 18
-        },
-        "weight": "400 мл"
       }
     ]
   },
@@ -411,7 +411,7 @@
     ]
   },
   {
-    "category": "Крепкий алкоголик",
+    "category": "Крепкий алкоголь",
     "items": [
       {
         "name": "Коньяк",

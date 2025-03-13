@@ -118,6 +118,118 @@ export default function AdminPage() {
     }
   };
 
+  const handleMoveCategoryUp = async (categoryName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const updatedMenu = await menuService.moveCategoryUp(menuItems, categoryName);
+      setMenuItems(updatedMenu);
+    } catch (error) {
+      console.error('Ошибка при перемещении категории вверх:', error);
+    }
+  };
+
+  const handleMoveCategoryDown = async (categoryName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const updatedMenu = await menuService.moveCategoryDown(menuItems, categoryName);
+      setMenuItems(updatedMenu);
+    } catch (error) {
+      console.error('Ошибка при перемещении категории вниз:', error);
+    }
+  };
+
+  const handleMoveItemUp = async (categoryName: string, path: string[]) => {
+    try {
+      const updatedMenu = [...menuItems];
+      const category = updatedMenu.find(cat => cat.category === categoryName);
+      if (!category) return;
+
+      const moveItemInArray = (items: MenuItem[], index: number) => {
+        if (index <= 0) return items;
+        const newItems = [...items];
+        [newItems[index], newItems[index - 1]] = [newItems[index - 1], newItems[index]];
+        return newItems;
+      };
+
+      const moveItem = (items: MenuItem[], currentPath: string[]): MenuItem[] => {
+        if (currentPath.length === 1) {
+          const index = items.findIndex(item => item.name === currentPath[0]);
+          return moveItemInArray(items, index);
+        }
+
+        const [current, ...rest] = currentPath;
+        const parentIndex = items.findIndex(item => item.name === current);
+        
+        if (parentIndex === -1) return items;
+        
+        const parent = items[parentIndex];
+        if (!parent.items) return items;
+
+        return items.map((item, index) => {
+          if (index === parentIndex) {
+            return {
+              ...item,
+              items: moveItem(parent.items!, rest)
+            };
+          }
+          return item;
+        });
+      };
+
+      category.items = moveItem(category.items, path);
+      await menuService.saveMenu(updatedMenu);
+      setMenuItems(updatedMenu);
+    } catch (error) {
+      console.error('Ошибка при перемещении элемента вверх:', error);
+    }
+  };
+
+  const handleMoveItemDown = async (categoryName: string, path: string[]) => {
+    try {
+      const updatedMenu = [...menuItems];
+      const category = updatedMenu.find(cat => cat.category === categoryName);
+      if (!category) return;
+
+      const moveItemInArray = (items: MenuItem[], index: number) => {
+        if (index >= items.length - 1) return items;
+        const newItems = [...items];
+        [newItems[index], newItems[index + 1]] = [newItems[index + 1], newItems[index]];
+        return newItems;
+      };
+
+      const moveItem = (items: MenuItem[], currentPath: string[]): MenuItem[] => {
+        if (currentPath.length === 1) {
+          const index = items.findIndex(item => item.name === currentPath[0]);
+          return moveItemInArray(items, index);
+        }
+
+        const [current, ...rest] = currentPath;
+        const parentIndex = items.findIndex(item => item.name === current);
+        
+        if (parentIndex === -1) return items;
+        
+        const parent = items[parentIndex];
+        if (!parent.items) return items;
+
+        return items.map((item, index) => {
+          if (index === parentIndex) {
+            return {
+              ...item,
+              items: moveItem(parent.items!, rest)
+            };
+          }
+          return item;
+        });
+      };
+
+      category.items = moveItem(category.items, path);
+      await menuService.saveMenu(updatedMenu);
+      setMenuItems(updatedMenu);
+    } catch (error) {
+      console.error('Ошибка при перемещении элемента вниз:', error);
+    }
+  };
+
   const handleAddItem = async () => {
     if (!selectedCategory || !newItem.name) {
       alert('Выберите категорию и введите название блюда');
@@ -375,202 +487,146 @@ export default function AdminPage() {
   };
 
   const renderMenuItem = (item: MenuItem, path: string[], level: number = 0) => {
-    if (level >= 3) return null;
+    const isSelected = selectedPath.join('/') === path.join('/');
+    const isParentOfSelected = selectedPath.length > path.length && 
+      path.every((item, index) => selectedPath[index] === item);
 
     return (
-      <div key={item.name} className={`pl-${level * 4} py-2 border-l-2 border-white/5 hover:border-[#E6B980]/20 transition-colors`}>
-        <div className="flex items-center justify-between group">
-          <div className="flex items-center space-x-4 flex-1 min-w-0">
-            {item.isSubcategory && item.items && item.items.length > 0 ? (
-              <svg className="w-4 h-4 text-[#E6B980] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            ) : null}
-            <div className="flex items-center space-x-2 min-w-0">
-              <span 
-                className={`text-white group-hover:text-[#E6B980] transition-colors truncate ${item.isSubcategory ? 'cursor-pointer' : ''}`}
-                onClick={() => item.isSubcategory && handleItemClick(item, path, selectedCategory)}
-              >
-                {item.name}
-              </span>
-              {!item.isSubcategory && (
-                <span className="text-[#E6B980] text-sm flex-shrink-0">{item.price}</span>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => {
-                if (item.isSubcategory) {
-                  setSelectedCategory(selectedCategory);
-                  setSelectedPath(path);
-                }
-                handleEditItem(selectedCategory, item, path);
-              }}
-              className="ml-4 bg-[#E6B980]/20 hover:bg-[#E6B980] text-[#E6B980] hover:text-black px-3 py-1.5 rounded-lg text-xs transition-all flex items-center space-x-2 flex-shrink-0"
-            >
-              <span className="hidden sm:inline">Редактировать</span>
-              <span className="inline sm:hidden">✎</span>
-            </button>
-            {item.isSubcategory && level < 2 && (
-              <button
-                onClick={() => {
-                  setSelectedCategory(selectedCategory);
-                  setSelectedPath(path);
-                  setIsAddingSubcategory(true);
-                  setNewItem({
-                    name: '',
-                    price: '',
-                    description: '',
-                    image: '',
-                    nutrition: { calories: 0, protein: 0, fats: 0, carbs: 0 },
-                    isSubcategory: true,
-                    level: path.length + 1,
-                    items: []
-                  });
-                }}
-                className="border border-[#E6B980]/20 text-[#E6B980]/60 py-1.5 px-3 text-xs rounded-lg font-medium tracking-wide hover:bg-[#E6B980]/5 transition-all"
-              >
-                + Подкатегория
-              </button>
-            )}
-          </div>
+      <div
+        key={item.name}
+        className={`group relative flex items-center space-x-2 px-4 py-2 cursor-pointer rounded-lg transition-all ${
+          isSelected
+            ? 'bg-[#E6B980]/20 hover:bg-[#E6B980]/30'
+            : isParentOfSelected
+            ? 'bg-white/5 hover:bg-white/10'
+            : 'hover:bg-white/5'
+        }`}
+        style={{ marginLeft: `${level * 1}rem` }}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleItemClick(item, path, selectedCategory);
+        }}
+      >
+        <div className="flex-1 flex items-center min-w-0">
+          {item.isSubcategory && item.items && item.items.length > 0 ? (
+            <svg className="w-4 h-4 text-[#E6B980] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          ) : null}
+          <span className={`ml-2 truncate ${isSelected ? 'text-[#E6B980]' : 'text-white/90'}`}>
+            {item.name}
+          </span>
         </div>
-        {item.isSubcategory && item.items && item.items.length > 0 && (
-          <div className="ml-4 mt-2">
-            {item.items.map((subItem) =>
-              renderMenuItem(subItem, [...path, subItem.name], level + 1)
-            )}
-          </div>
-        )}
+
+        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleMoveItemUp(selectedCategory, path);
+            }}
+            className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+            title="Переместить вверх"
+          >
+            <svg className="w-4 h-4 text-[#E6B980]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+            </svg>
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleMoveItemDown(selectedCategory, path);
+            }}
+            className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+            title="Переместить вниз"
+          >
+            <svg className="w-4 h-4 text-[#E6B980]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEditItem(selectedCategory, item, path);
+            }}
+            className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+            title="Редактировать"
+          >
+            <svg className="w-4 h-4 text-[#E6B980]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteItem(selectedCategory, path);
+            }}
+            className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+            title="Удалить"
+          >
+            <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
       </div>
     );
   };
 
   const renderCategoryTree = (category: MenuCategory) => {
-    const renderSubcategories = (items: MenuItem[], level: number = 0, parentPath: string[] = []): React.ReactNode => {
-      if (level >= 3) return null;
-      
-      return items
-        .filter(item => item.isSubcategory)
-        .map((item) => (
-          <div key={item.name} className="ml-4">
-            <div className={`p-2 rounded-lg cursor-pointer transition-all mt-2 ${
-              selectedCategory === category.category && JSON.stringify(selectedPath) === JSON.stringify([...parentPath, item.name])
-                ? 'bg-[#E6B980]/10 border border-[#E6B980]/30'
-                : 'bg-white/[0.02] border border-white/10 hover:border-[#E6B980]/20'
-            }`}
-            onClick={() => {
-              const isNewCategory = selectedCategory !== category.category;
-              setSelectedCategory(category.category);
-              setSelectedPath([]);
-              setEditingCategoryName(category.category);
-              if (isNewCategory) {
-                setExpandedCategories([category.category]);
-              } else {
-                const isExpanded = expandedCategories.includes(category.category);
-                if (isExpanded) {
-                  setExpandedCategories(expandedCategories.filter(p => p !== category.category));
-                } else {
-                  setExpandedCategories([...expandedCategories, category.category]);
-                }
-              }
-            }}>
-              <div className="flex items-center justify-between group">
-                <div className="flex items-center space-x-2">
-                  <span className="text-[#E6B980] text-xs">↳</span>
-                  <span className="text-sm font-light">{item.name}</span>
-                </div>
-                <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100">
-                  {level < 2 && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedCategory(category.category);
-                        setSelectedPath([...parentPath, item.name]);
-                        setNewItem({
-                          name: '',
-                          price: '',
-                          description: 'Подкатегория',
-                          image: '',
-                          nutrition: { calories: 0, protein: 0, fats: 0, carbs: 0 },
-                          isSubcategory: true,
-                          level: level + 2,
-                          items: []
-                        });
-                        setIsAddingSubcategory(true);
-                      }}
-                      className="bg-[#E6B980]/20 hover:bg-[#E6B980]/40 text-[#E6B980] px-2 py-1 rounded text-xs transition-colors"
-                      title="Добавить подкатегорию"
-                    >
-                      ✎
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-            {item.items && renderSubcategories(item.items, level + 1, [...parentPath, item.name])}
-          </div>
-        ));
-    };
-
     return (
       <div key={category.category} className="space-y-2">
-        <div
-          className={`p-3 rounded-lg cursor-pointer transition-all ${
-            selectedCategory === category.category && selectedPath.length === 0
-              ? 'bg-[#E6B980]/10 border border-[#E6B980]/30'
-              : 'bg-white/[0.02] border border-white/10 hover:border-[#E6B980]/20'
-          }`}
-          onClick={() => {
-            const isNewCategory = selectedCategory !== category.category;
-            setSelectedCategory(category.category);
-            setSelectedPath([]);
-            setEditingCategoryName(category.category);
-            if (isNewCategory) {
-              setExpandedCategories([category.category]);
-            } else {
-              const isExpanded = expandedCategories.includes(category.category);
-              if (isExpanded) {
-                setExpandedCategories(expandedCategories.filter(p => p !== category.category));
-              } else {
-                setExpandedCategories([...expandedCategories, category.category]);
-              }
-            }
-          }}
-        >
-          <div className="flex items-center justify-between group">
-            <span className="text-sm font-light">{category.category}</span>
-            <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setEditingCategoryName(category.category);
-                  setNewCategoryName(category.category);
-                  setIsEditingCategory(true);
-                }}
-                className="bg-[#E6B980]/20 hover:bg-[#E6B980]/40 text-[#E6B980] px-2 py-1 rounded text-xs transition-colors"
-                title="Редактировать категорию"
-              >
-                ✎
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedCategory(category.category);
-                  setSelectedPath([]);
-                  setIsAddingSubcategory(true);
-                  resetForm();
-                }}
-                className="bg-[#E6B980]/20 hover:bg-[#E6B980]/40 text-[#E6B980] px-2 py-1 rounded text-xs transition-colors"
-                title="Добавить подкатегорию"
-              >
-                +
-              </button>
-            </div>
+        <div className="group flex items-center justify-between space-x-2 px-4 py-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all">
+          <span className="text-white/90 font-medium">{category.category}</span>
+          <div className="flex items-center space-x-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMoveItemUp(category.category, category.items.map(item => item.name));
+              }}
+              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100"
+              title="Переместить вверх"
+            >
+              <svg className="w-4 h-4 text-[#E6B980]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+              </svg>
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMoveItemDown(category.category, category.items.map(item => item.name));
+              }}
+              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100"
+              title="Переместить вниз"
+            >
+              <svg className="w-4 h-4 text-[#E6B980]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <button
+              onClick={() => {
+                setSelectedCategory(category.category);
+                setSelectedPath([]);
+                setIsEditingCategory(true);
+              }}
+              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100"
+              title="Редактировать"
+            >
+              <svg className="w-4 h-4 text-[#E6B980]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+            </button>
+            <button
+              onClick={() => handleDeleteCategory(category.category)}
+              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100"
+              title="Удалить"
+            >
+              <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
           </div>
         </div>
-        {renderSubcategories(category.items)}
+        {renderCategoryItems(category.items)}
       </div>
     );
   };
@@ -773,9 +829,30 @@ export default function AdminPage() {
                           <span>{category.category}</span>
                         </div>
                       </button>
-                      <div className="flex items-center">
+                      <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMoveItemUp(category.category, category.items.map(item => item.name));
+                          }}
+                          className="bg-[#E6B980]/20 hover:bg-[#E6B980]/40 text-[#E6B980] px-2 py-1 rounded text-xs transition-colors"
+                          title="Переместить вверх"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMoveItemDown(category.category, category.items.map(item => item.name));
+                          }}
+                          className="bg-[#E6B980]/20 hover:bg-[#E6B980]/40 text-[#E6B980] px-2 py-1 rounded text-xs transition-colors"
+                          title="Переместить вниз"
+                        >
+                          ↓
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setEditingCategoryName(category.category);
                             setNewCategoryName(category.category);
                             setIsEditingCategory(true);
