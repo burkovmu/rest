@@ -196,13 +196,13 @@ export default function Contact({ onClose }: ContactProps) {
                       type="submit"
                       className="relative group overflow-hidden rounded-lg h-10 flex-1 md:w-44"
                     >
-                      <div className="absolute inset-0 bg-gradient-to-r from-[#E6B980] to-[#D4A56A] opacity-10 group-hover:opacity-20 transition-opacity" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-[#E6B980] to-[#D4A56A] opacity-20 group-hover:opacity-100 transition-all duration-300" />
                       <div className="relative flex items-center justify-center">
-                        <span className="text-[10px] md:text-xs uppercase tracking-[0.15em] text-[#E6B980] group-hover:text-white transition-colors">
+                        <span className="text-[10px] md:text-xs uppercase tracking-[0.15em] text-[#E6B980] group-hover:text-black transition-colors">
                           Забронировать
                         </span>
                       </div>
-                      <div className="absolute inset-0 border border-[#E6B980]/20" />
+                      <div className="absolute inset-0 border border-[#E6B980]" />
                     </button>
                   </div>
                 </div>
