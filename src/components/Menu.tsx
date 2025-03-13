@@ -19,7 +19,9 @@ interface MenuItem {
     carbs: number;
   };
   weight?: string;
-  subcategory?: MenuItem[];
+  isSubcategory?: boolean;
+  level?: number;
+  items?: MenuItem[];
 }
 
 interface MenuCategory {
@@ -306,7 +308,9 @@ export const menuItems: MenuCategory[] = [
         description: "Подкатегория",
         image: "https://images.unsplash.com/photo-1514218953589-2d7d37efd2dc?auto=format&fit=crop&w=800&q=80",
         nutrition: { calories: 0, protein: 0, fats: 0, carbs: 0 },
-        subcategory: [
+        isSubcategory: true,
+        level: 1,
+        items: [
           {
             name: "Zacapa XO",
             price: "2100₽",
@@ -336,7 +340,9 @@ export const menuItems: MenuCategory[] = [
         description: "Подкатегория",
         image: "https://images.unsplash.com/photo-1613008298824-89a8a8d2c595?auto=format&fit=crop&w=800&q=80",
         nutrition: { calories: 0, protein: 0, fats: 0, carbs: 0 },
-        subcategory: [
+        isSubcategory: true,
+        level: 1,
+        items: [
           {
             name: "Monkey 47",
             price: "1400₽",
@@ -366,7 +372,9 @@ export const menuItems: MenuCategory[] = [
         description: "Подкатегория",
         image: "https://images.unsplash.com/photo-1516535794938-6063878f08cc?auto=format&fit=crop&w=800&q=80",
         nutrition: { calories: 0, protein: 0, fats: 0, carbs: 0 },
-        subcategory: [
+        isSubcategory: true,
+        level: 1,
+        items: [
           {
             name: "Don Julio 1942",
             price: "2800₽",
@@ -396,7 +404,9 @@ export const menuItems: MenuCategory[] = [
         description: "Подкатегория",
         image: "https://images.unsplash.com/photo-1613590928141-93e6f5f9639b?auto=format&fit=crop&w=800&q=80",
         nutrition: { calories: 0, protein: 0, fats: 0, carbs: 0 },
-        subcategory: [
+        isSubcategory: true,
+        level: 1,
+        items: [
           {
             name: "Beluga Noble",
             price: "950₽",
@@ -444,7 +454,7 @@ export default function Menu() {
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [currentMenu, setCurrentMenu] = useState<MenuCategory[]>(menuItems);
   const [selectedCategory, setSelectedCategory] = useState(0);
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
+  const [currentPath, setCurrentPath] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -486,22 +496,30 @@ export default function Menu() {
   }, [selectedItem]);
 
   const handleItemClick = (item: MenuItem) => {
-    if (item.subcategory) {
-      setSelectedSubcategory(item.name);
+    if (item.isSubcategory && item.items) {
+      setCurrentPath([...currentPath, item.name]);
     } else {
       setSelectedItem(item);
     }
   };
 
-  const currentCategory = currentMenu[selectedCategory] || currentMenu[0];
-  let currentItems = currentCategory.items;
-  
-  if (selectedSubcategory) {
-    const subcategoryItem = currentCategory.items.find(item => item.name === selectedSubcategory);
-    if (subcategoryItem?.subcategory) {
-      currentItems = subcategoryItem.subcategory;
+  const getCurrentItems = (items: MenuItem[]): MenuItem[] => {
+    if (currentPath.length === 0) return items;
+
+    let currentItems = items;
+    for (const pathItem of currentPath) {
+      const nextLevel = currentItems.find(item => item.name === pathItem);
+      if (nextLevel?.items) {
+        currentItems = nextLevel.items;
+      } else {
+        return [];
+      }
     }
-  }
+    return currentItems;
+  };
+
+  const currentCategory = currentMenu[selectedCategory] || currentMenu[0];
+  const currentItems = getCurrentItems(currentCategory.items);
 
   if (isLoading) {
     return (
@@ -560,7 +578,7 @@ export default function Menu() {
               key={index}
               onClick={() => {
                 setSelectedCategory(index);
-                setSelectedSubcategory("");
+                setCurrentPath([]);
               }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -599,23 +617,23 @@ export default function Menu() {
           ))}
         </div>
 
-        {selectedSubcategory && (
-          <div className="space-y-6">
+        {currentPath.length > 0 && (
+          <div className="relative z-10 mb-8">
             <motion.button
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              onClick={() => setSelectedSubcategory("")}
+              onClick={() => setCurrentPath(currentPath.slice(0, -1))}
               className="relative group overflow-hidden px-6 py-3 border border-[#333] rounded-full uppercase text-sm tracking-widest text-gray-500 transition-all hover:border-[#E6B980]/40 hover:text-[#E6B980]/40 flex items-center justify-center bg-black/20"
             >
-              <span className="relative">← Назад к {currentMenu[selectedCategory].category}</span>
+              <span className="relative">← Назад к {currentPath[currentPath.length - 2] || currentCategory.category}</span>
             </motion.button>
 
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center"
+              className="text-center mt-4"
             >
-              <h4 className="text-2xl font-light tracking-wide text-[#E6B980]">{selectedSubcategory}</h4>
+              <h4 className="text-2xl font-light tracking-wide text-[#E6B980]">{currentPath[currentPath.length - 1]}</h4>
               <div className="h-[1px] w-24 mx-auto bg-gradient-to-r from-transparent via-[#E6B980]/30 to-transparent mt-4" />
             </motion.div>
           </div>
@@ -627,20 +645,25 @@ export default function Menu() {
           animate="visible"
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20"
         >
-          {currentItems.map((item, itemIndex) => (
+          {currentItems.sort((a, b) => {
+            // Подкатегории всегда будут первыми
+            if (a.isSubcategory && !b.isSubcategory) return -1;
+            if (!a.isSubcategory && b.isSubcategory) return 1;
+            return 0;
+          }).map((item, itemIndex) => (
             <motion.div
               key={itemIndex}
               variants={fadeInUp}
               onClick={() => handleItemClick(item)}
               className={`group relative overflow-hidden backdrop-blur-sm rounded-lg cursor-pointer transition-all duration-300 border ${
-                item.subcategory 
+                item.isSubcategory 
                   ? 'bg-gradient-to-br from-[#E6B980]/5 to-transparent border-[#E6B980]/20 hover:border-[#E6B980]/40'
                   : 'bg-black/30 hover:bg-black/50 border-white/10 hover:border-[#E6B980]/50'
               }`}
             >
               <div className="absolute inset-0 bg-gradient-to-br from-[#E6B980]/0 to-[#E6B980]/0 group-hover:from-[#E6B980]/5 group-hover:to-transparent transition-all duration-300" />
               
-              {!item.subcategory && (
+              {!item.isSubcategory ? (
                 <div className="relative aspect-[4/3] w-full overflow-hidden">
                   <Image
                     src={item.image}
@@ -651,14 +674,14 @@ export default function Menu() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/30" />
                 </div>
-              )}
+              ) : null}
 
-              <div className={`relative p-6 ${item.subcategory ? 'text-center' : ''}`}>
-                <div className="space-y-3">
-                  <h5 className="text-xl md:text-2xl font-light tracking-wide text-white group-hover:text-[#E6B980] transition-colors">
+              <div className={`relative p-6 ${item.isSubcategory ? 'h-full flex items-center justify-center' : ''}`}>
+                <div className={`space-y-3 ${item.isSubcategory ? 'w-full' : ''}`}>
+                  <h5 className={`text-xl md:text-2xl font-light tracking-wide text-white group-hover:text-[#E6B980] transition-colors ${item.isSubcategory ? 'text-center' : ''}`}>
                     {item.name}
                   </h5>
-                  {!item.subcategory && (
+                  {!item.isSubcategory && (
                     <>
                       <p className="text-gray-400 text-sm font-light leading-relaxed line-clamp-2">
                         {item.description}
@@ -675,7 +698,7 @@ export default function Menu() {
                       )}
                     </>
                   )}
-                  {item.subcategory && (
+                  {item.isSubcategory && (
                     <div className="pt-2">
                       <p className="text-[#E6B980]/60 text-sm tracking-wide flex items-center justify-center">
                         <span>Нажмите, чтобы посмотреть варианты</span>
@@ -718,7 +741,7 @@ export default function Menu() {
                   className="space-y-6"
                 >
                   <div className="flex flex-col md:flex-row md:space-x-8 space-y-4 md:space-y-0">
-                    {!selectedItem.subcategory && (
+                    {!selectedItem.isSubcategory && (
                       <div className="relative w-full md:w-[400px] aspect-square rounded-xl overflow-hidden flex-shrink-0">
                         <Image
                           src={selectedItem.image}
@@ -736,13 +759,13 @@ export default function Menu() {
                         <Dialog.Title className="text-2xl md:text-3xl font-light tracking-wide text-[#E6B980]">
                           {selectedItem.name}
                         </Dialog.Title>
-                        {!selectedItem.subcategory && (
+                        {!selectedItem.isSubcategory && (
                           <span className="text-white/60 text-xs ml-4 bg-white/5 px-3 py-1 rounded-full whitespace-nowrap">
                             {selectedItem.weight || (currentCategory.category === "Крепкий алкоголь" ? '50 мл' : '')}
                           </span>
                         )}
                       </div>
-                      {!selectedItem.subcategory ? (
+                      {!selectedItem.isSubcategory ? (
                         <>
                           <p className="text-gray-300 text-sm leading-relaxed font-light mb-4">
                             {selectedItem.description}
@@ -768,9 +791,13 @@ export default function Menu() {
                         </>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {selectedItem.subcategory.map((subItem, index) => (
+                          {selectedItem.items?.map((subItem, index) => (
                             <div
                               key={index}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedItem(subItem);
+                              }}
                               className="p-4 rounded-lg border border-white/10 bg-white/[0.02] hover:bg-white/[0.04] transition-colors group"
                             >
                               <h3 className="text-xl font-light text-white group-hover:text-[#E6B980] mb-2 transition-colors">

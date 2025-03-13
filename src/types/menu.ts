@@ -10,7 +10,9 @@ export interface MenuItem {
     carbs: number;
   };
   weight?: string;
-  subcategory?: MenuItem[];
+  isSubcategory?: boolean;
+  level?: number;
+  items?: MenuItem[];
 }
 
 export interface MenuCategory {

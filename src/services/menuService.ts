@@ -1,58 +1,19 @@
-import { MenuCategory } from '@/types/menu';
+import { MenuCategory, MenuItem } from '@/types/menu';
 import { menuItems as initialMenuItems } from '@/components/Menu';
-
-interface MenuItem {
-  name: string;
-  price: string;
-  description: string;
-  image: string;
-  nutrition: {
-    calories: number;
-    protein: number;
-    fats: number;
-    carbs: number;
-  };
-  weight?: string;
-  subcategory?: MenuItem[];
-}
-
-const getLocalStorage = () => {
-  if (typeof window !== 'undefined') {
-    return window.localStorage;
-  }
-  return null;
-};
 
 export const menuService = {
   async loadMenu(): Promise<MenuCategory[]> {
     try {
-      const storage = getLocalStorage();
-      
-      // Если мы на клиенте и есть localStorage
-      if (storage) {
-        const savedMenu = storage.getItem('menuItems');
-        if (savedMenu) {
-          const parsedMenu = JSON.parse(savedMenu);
-          if (Array.isArray(parsedMenu) && parsedMenu.length > 0) {
-            return parsedMenu;
-          }
-        }
-      }
-      
-      // Если нет сохраненного меню, пробуем загрузить с сервера
+      // Загружаем меню с сервера
       const response = await fetch('/api/menu');
       if (response.ok) {
         const data = await response.json();
         if (Array.isArray(data) && data.length > 0) {
-          // Сохраняем в localStorage только на клиенте
-          if (storage) {
-            storage.setItem('menuItems', JSON.stringify(data));
-          }
           return data;
         }
       }
       
-      // Если всё остальное не сработало, возвращаем начальные данные
+      // Если что-то пошло не так, возвращаем начальные данные
       return initialMenuItems;
     } catch (error) {
       console.error('Ошибка при загрузке меню:', error);
@@ -62,18 +23,17 @@ export const menuService = {
 
   async saveMenu(menu: MenuCategory[]): Promise<void> {
     try {
-      const storage = getLocalStorage();
-      if (storage) {
-        storage.setItem('menuItems', JSON.stringify(menu));
-      }
-      
-      await fetch('/api/menu', {
+      const response = await fetch('/api/menu', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(menu),
       });
+      
+      if (!response.ok) {
+        throw new Error('Ошибка при сохранении меню');
+      }
     } catch (error) {
       console.error('Ошибка при сохранении меню:', error);
       throw error;
@@ -114,54 +74,142 @@ export const menuService = {
     return updatedMenu;
   },
 
-  async deleteItem(menu: MenuCategory[], categoryName: string, itemName: string, subcategoryName?: string): Promise<MenuCategory[]> {
-    const updatedMenu = menu.map(category => {
-      if (category.category === categoryName) {
-        return {
-          ...category,
-          items: category.items.map(item => {
-            if (subcategoryName && item.name === subcategoryName) {
-              return {
-                ...item,
-                subcategory: (item.subcategory || []).filter(subItem => subItem.name !== itemName)
-              };
-            }
-            return item;
-          }).filter(item => item.name !== itemName || subcategoryName)
-        };
+  findItemAndParent(items: MenuItem[], itemPath: string[]): { item: MenuItem | null, parent: MenuItem | null, parentPath: string[] } {
+    if (itemPath.length === 0) return { item: null, parent: null, parentPath: [] };
+    
+    const traverse = (currentItems: MenuItem[], path: string[], currentPath: string[] = []): { item: MenuItem | null, parent: MenuItem | null, parentPath: string[] } => {
+      if (path.length === 1) {
+        const item = currentItems.find(i => i.name === path[0]);
+        return { item: item || null, parent: null, parentPath: currentPath };
       }
-      return category;
+
+      const currentItem = currentItems.find(i => i.name === path[0]);
+      if (!currentItem?.items) return { item: null, parent: null, parentPath: [] };
+
+      const result = traverse(currentItem.items, path.slice(1), [...currentPath, currentItem.name]);
+      if (result.item && !result.parent) {
+        result.parent = currentItem;
+      }
+      return result;
+    };
+
+    return traverse(items, itemPath);
+  },
+
+  async deleteItem(menu: MenuCategory[], categoryName: string, itemPath: string[]): Promise<MenuCategory[]> {
+    const updatedMenu = menu.map(category => {
+      if (category.category !== categoryName) return category;
+
+      const deleteFromItems = (items: MenuItem[], path: string[]): MenuItem[] => {
+        if (path.length === 1) {
+          return items.filter(item => item.name !== path[0]);
+        }
+
+        const currentItem = items.find(item => item.name === path[0]);
+        if (!currentItem?.items) return items;
+
+        return items.map(item => {
+          if (item.name === path[0]) {
+            return {
+              ...item,
+              items: deleteFromItems(item.items || [], path.slice(1))
+            };
+          }
+          return item;
+        });
+      };
+
+      return {
+        ...category,
+        items: deleteFromItems(category.items, itemPath)
+      };
     });
+
     await this.saveMenu(updatedMenu);
     return updatedMenu;
   },
 
-  async updateItem(menu: MenuCategory[], categoryName: string, updatedItem: MenuItem, subcategoryName?: string): Promise<MenuCategory[]> {
+  async addItem(
+    menu: MenuCategory[],
+    categoryName: string,
+    newItem: MenuItem,
+    parentPath: string[] = []
+  ): Promise<MenuCategory[]> {
     const updatedMenu = menu.map(category => {
-      if (category.category === categoryName) {
-        return {
-          ...category,
-          items: category.items.map(item => {
-            if (subcategoryName) {
-              if (item.name === subcategoryName) {
-                return {
-                  ...item,
-                  subcategory: (item.subcategory || []).map(subItem => 
-                    subItem.name === updatedItem.name ? updatedItem : subItem
-                  )
-                };
-              }
-              return item;
-            } else {
-              return item.name === updatedItem.name ? updatedItem : item;
-            }
-          })
-        };
-      }
-      return category;
+      if (category.category !== categoryName) return category;
+
+      const addToItems = (items: MenuItem[], path: string[]): MenuItem[] => {
+        if (path.length === 0) {
+          return [...items, newItem];
+        }
+
+        return items.map(item => {
+          if (item.name === path[0] && item.items) {
+            return {
+              ...item,
+              items: addToItems(item.items, path.slice(1))
+            };
+          }
+          return item;
+        });
+      };
+
+      return {
+        ...category,
+        items: addToItems(category.items, parentPath)
+      };
     });
 
     await this.saveMenu(updatedMenu);
     return updatedMenu;
+  },
+
+  async updateItem(
+    menu: MenuCategory[],
+    categoryName: string,
+    updatedItem: MenuItem,
+    itemPath: string[]
+  ): Promise<MenuCategory[]> {
+    const updatedMenu = menu.map(category => {
+      if (category.category !== categoryName) return category;
+
+      const updateInItems = (items: MenuItem[]): MenuItem[] => {
+        if (itemPath.length === 1) {
+          return items.map(item => 
+            item.name === itemPath[0] ? updatedItem : item
+          );
+        }
+
+        return items.map(item => {
+          if (item.name === itemPath[0] && item.items) {
+            return {
+              ...item,
+              items: updateInItems(item.items)
+            };
+          }
+          return item;
+        });
+      };
+
+      return {
+        ...category,
+        items: updateInItems(category.items)
+      };
+    });
+
+    await this.saveMenu(updatedMenu);
+    return updatedMenu;
+  },
+
+  async updateItemWithMove(
+    menu: MenuCategory[],
+    oldCategory: string,
+    oldPath: string[],
+    newCategory: string,
+    newPath: string[],
+    updatedItem: MenuItem
+  ): Promise<MenuCategory[]> {
+    // Просто обновляем элемент в текущей категории
+    return await this.updateItem(menu, oldCategory, updatedItem, oldPath);
   }
 }; 
